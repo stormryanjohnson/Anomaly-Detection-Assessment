@@ -3,6 +3,7 @@
 import pandas as pd
 import os, sqlite3, csv, json
 
+
 # helper functions for Task 1
 def create_tables(cursor: sqlite3.Cursor) -> None:
     
@@ -112,23 +113,23 @@ if __name__ == '__main__':
     
     # total network traffic on the first day
     query_total_traffic_first_day = '''
-    SELECT SUM(value) AS total_network_traffic_first_day
-    FROM time_series
-    WHERE date = (
-    SELECT MIN(date)
-    FROM time_series
-    )
+        SELECT SUM(value) AS total_network_traffic_first_day
+        FROM time_series
+        WHERE date = (
+        SELECT MIN(date)
+        FROM time_series
+        )
     '''  
     
     # top 5 devices total network traffic by device name
     query_top_5_devices = '''
-    SELECT name, SUM(value) AS total_network_traffic
-    FROM time_series AS ts
-    LEFT JOIN meta AS m
-    ON ts.device_id = m.id
-    GROUP BY name
-    ORDER BY total_network_traffic DESC
-    LIMIT 5
+        SELECT name, SUM(value) AS total_network_traffic
+        FROM time_series AS ts
+        LEFT JOIN meta AS m
+        ON ts.device_id = m.id
+        GROUP BY name
+        ORDER BY total_network_traffic DESC
+        LIMIT 5
     '''  
     
     df_meta = pd.read_sql_query(query_meta_records, db_conn)
