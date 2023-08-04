@@ -77,6 +77,11 @@ def find_device_id_from_file_name(csv_file: str) -> int:
     return device_id
 
 
+def query_table_as_dataframe(cursor: sqlite3.Cursor, query: str) -> pd.DataFrame:
+    connection = sqlite3.connect(database_name)
+    df = pd.read_sql_query(query, connection)
+    connection.close()
+    return df
 
 
     
@@ -107,9 +112,39 @@ if __name__ == '__main__':
         elif file_name.endswith('.txt'):
             insert_query = f'INSERT INTO meta (id, name) VALUES (?, ?)'
             insert_data_from_txt(cursor=cursor, txt_file=file_name, insert_query=insert_query)
-            
     
-        
+    # return all records in meta table
+    query_meta_records = 'SELECT * FROM meta'  
+    
+    # total network traffic on the first day
+    query_total_traffic_first_day = '''
+    SELECT SUM(value) AS total_network_traffic_first_day
+    FROM time_series
+    WHERE date = (
+    SELECT MIN(date)
+    FROM time_series
+    )
+    '''  
+    
+    # top 5 devices total network traffic by device name
+    query_top_5_devices = '''
+    SELECT name, SUM(value) AS total_network_traffic
+    FROM time_series AS ts
+    LEFT JOIN meta AS m
+    ON ts.device_id = m.id
+    GROUP BY name
+    ORDER BY total_network_traffic DESC
+    LIMIT 5
+    '''  
+    
+    df_meta = pd.read_sql_query(query_meta_records, db_conn)
+    #print(df_meta.head())
+    
+    df_total_traffic_day_1 = pd.read_sql_query(query_total_traffic_first_day, db_conn)
+    #print(df_total_traffic_day_1.head())
+    
+    df_top_5_devices = pd.read_sql_query(query_top_5_devices, db_conn)
+    #print(df_top_5_devices)
     
     # commit and close connection
     db_conn.commit()
