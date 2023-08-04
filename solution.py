@@ -77,12 +77,6 @@ def find_device_id_from_file_name(csv_file: str) -> int:
     return device_id
 
 
-def query_table_as_dataframe(cursor: sqlite3.Cursor, query: str) -> pd.DataFrame:
-    connection = sqlite3.connect(database_name)
-    df = pd.read_sql_query(query, connection)
-    connection.close()
-    return df
-
 
     
 # %%
