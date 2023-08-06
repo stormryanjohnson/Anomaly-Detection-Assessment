@@ -322,6 +322,7 @@ def insert_data_from_txt(cursor: sqlite3.Cursor, txt_file: str, insert_query: st
             json_objects = json.load(file)
             for json_obj in json_objects:
                 cursor.execute(insert_query, (json_obj['id'], json_obj['name']))
+                
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
         raise e
@@ -364,8 +365,8 @@ def find_device_id_from_file_name(csv_file: str) -> int:
     ValueError: Invalid file name format. Unable to extract device ID.
     """
     try:
-        return int(csv_file[csv_file.rfind('_')+1: csv_file.rfind('.')])
         
+        return int(csv_file[csv_file.rfind('_')+1: csv_file.rfind('.')])     
         
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
@@ -376,13 +377,31 @@ def find_device_id_from_file_name(csv_file: str) -> int:
 
 def generate_dataframes_from_files(files: list) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Generate DataFrames from CSV and TXT files.
+    Generate DataFrames from files.
 
-    Args:
-        files: A list of file paths.
+    This function takes a list of files as input and generates two DataFrames:
+        - A DataFrame of CSV files with the device ID added as a column.
+        - A DataFrame of TXT files with the ID column added as a column.
+
+    Parameters:
+    ----------
+    files : list
+        A list of files to be processed.
 
     Returns:
-        A tuple of two DataFrames, one for the CSV files and one for the TXT files.
+    -------
+    tuple[pd.DataFrame, pd.DataFrame]
+        A tuple of two DataFrames, one for CSV files and one for TXT files.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the data loading process.
+
+    Example:
+    -------
+    >>> files = ['file_1.csv', 'file_2.txt']
+    >>> dataframe_csv, dataframe_txt = generate_dataframes_from_files(files)
     """
     try:   
         all_dataframes_csv = []
@@ -412,6 +431,43 @@ def generate_dataframes_from_files(files: list) -> tuple[pd.DataFrame, pd.DataFr
         
         
 def check_odd_dates(time_series_df: pd.DataFrame, oddities: set, device_id_set: set) -> set:
+    """
+    Check for odd dates in the time series data.
+
+    This function takes a DataFrame of time series data and a set of device IDs as input and checks for the following oddities:
+        - Missing dates
+        - Duplicate dates
+
+    The function returns a set of device IDs that includes odd dates and a list of the device IDs with missing or duplicate dates.
+
+    Parameters:
+    ----------
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    oddities : set
+        A set of device IDs with odd dates.
+    device_id_set : set
+        A set of device IDs to be checked for odd dates.
+
+    Returns:
+    -------
+    set
+        A set of device IDs including odd dates.
+    list
+        A list of the device IDs with missing or duplicate dates.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the date checking process.
+
+    Example:
+    -------
+    >>> time_series_df = pd.DataFrame(...)
+    >>> oddities = set()
+    >>> device_id_set = {1, 2, 3}
+    >>> oddities, test_failure_list = check_odd_dates(time_series_df, oddities, device_id_set)
+    """
     try:
         test_failure_list = []
         unique_dates = set(time_series_df.date)
@@ -431,6 +487,31 @@ def check_odd_dates(time_series_df: pd.DataFrame, oddities: set, device_id_set: 
     
     
 def get_set_of_device_id(files: list) -> set:
+    """
+    Get a set of device IDs from a list of files.
+
+    This function takes a list of files as input and returns a set of device IDs. The function only considers CSV files.
+
+    Parameters:
+    ----------
+    files : list
+        A list of files to be processed.
+
+    Returns:
+    -------
+    set
+        A set of device IDs.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the device ID extraction process.
+
+    Example:
+    -------
+    >>> files = ['file_1.csv', 'file_2.txt']
+    >>> device_ids = get_set_of_device_id(files)
+    """
     try:
         
         return {
@@ -443,6 +524,38 @@ def get_set_of_device_id(files: list) -> set:
 
 
 def check_negative_traffic(time_series_df: pd.DataFrame, oddities: set) -> set:
+    """
+    Check for negative traffic in the time series data.
+
+    This function takes a DataFrame of time series data and a set of device IDs as input and checks for negative traffic.
+
+    The function returns a set of device IDs that includes negative traffic and a list of the device IDs with negative traffic.
+
+    Parameters:
+    ----------
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    oddities : set
+        A set of device IDs with negative traffic.
+
+    Returns:
+    -------
+    set
+        A set of device IDs that includes negative traffic.
+    list
+        A list of the device IDs with negative traffic.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the negative traffic checking process.
+
+    Example:
+    -------
+    >>> time_series_df = pd.DataFrame(...)
+    >>> oddities = set()
+    >>> oddities, test_failure_list = check_negative_traffic(time_series_df, oddities)
+    """
     try:
         test_failure_list = []
         negative_network_df = time_series_df[time_series_df.traffic < 0]
@@ -458,6 +571,44 @@ def check_negative_traffic(time_series_df: pd.DataFrame, oddities: set) -> set:
 
 
 def check_outliers(time_series_df: pd.DataFrame, oddities: set, device_id_set: set, threshold: float) -> set:
+    """
+    Check for outliers in the time series data.
+
+    This function takes a DataFrame of time series data, a set of device IDs, and a threshold as input and checks for outliers.
+
+    The function returns a set of device IDs that includes outliers in their data, and a list of the device IDs with outliers.
+
+    Parameters:
+    ----------
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    oddities : set
+        A set of device IDs with outliers.
+    device_id_set : set
+        A set of device IDs to be checked for outliers.
+    threshold : float
+        The threshold for outlier detection.
+
+    Returns:
+    -------
+    set
+        A set of device IDs that includes outliers in their data.
+    list
+        A list of the device IDs with outliers.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the outlier checking process.
+
+    Example:
+    -------
+    >>> time_series_df = pd.DataFrame(...)
+    >>> oddities = set()
+    >>> device_id_set = {1, 2, 3}
+    >>> threshold = 1.5
+    >>> oddities, test_failure_list = check_outliers(time_series_df, oddities, device_id_set, threshold)
+    """
     try:
         test_failure_list = []
         for device_id in device_id_set:
@@ -474,6 +625,44 @@ def check_outliers(time_series_df: pd.DataFrame, oddities: set, device_id_set: s
 
 
 def check_means(time_series_df: pd.DataFrame, oddities: set, device_id_set: set, threshold: float) -> set:
+    """
+    Check for outliers in the mean traffic of the devices.
+
+    This function takes a DataFrame of time series data, a set of device IDs, and a threshold as input and checks for outliers in the mean traffic of the devices.
+
+    The function returns a set of device IDs including outliers in the mean traffic and a list of the device IDs with only outliers in the mean traffic.
+
+    Parameters:
+    ----------
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    oddities : set
+        A set of device IDs with outliers in the mean traffic.
+    device_id_set : set
+        A set of device IDs to be checked for outliers in the mean traffic.
+    threshold : float
+        The threshold for outlier detection.
+
+    Returns:
+    -------
+    set
+        A set of device IDs including outliers in the mean traffic.
+    list
+        A list of the device IDs with only outliers in the mean traffic.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the mean traffic outlier checking process.
+
+    Example:
+    -------
+    >>> time_series_df = pd.DataFrame(...)
+    >>> oddities = set()
+    >>> device_id_set = {1, 2, 3}
+    >>> threshold = 1.5
+    >>> oddities, test_failure_list = check_means(time_series_df, oddities, device_id_set, threshold)
+    """
     try:
         device_traffic_mean_list = []
         device_id_list = []
@@ -484,7 +673,7 @@ def check_means(time_series_df: pd.DataFrame, oddities: set, device_id_set: set,
             device_traffic_mean_list.append(device_traffic_mean)
             device_id_list.append(device_id)
         outliers = find_outliers_iqr(device_traffic_mean_list, threshold)
-        # find device_id for all outliers and to oddities
+        # find device_id for all outliers and add to set and list
         for outlier in outliers:
             positions = find_positions(device_traffic_mean_list, outlier)
             for position in positions:
@@ -499,17 +688,57 @@ def check_means(time_series_df: pd.DataFrame, oddities: set, device_id_set: set,
 
 
 def check_variances(time_series_df: pd.DataFrame, oddities: set, device_id_set: set, threshold: float) -> set:
+    """
+    Check for outliers in the variance of the traffic of the devices.
+
+    This function takes a DataFrame of time series data, a set of device IDs, and a threshold as input and checks for outliers in the variance of the traffic of the devices.
+
+    The function returns a set of device IDs including outliers in the variance of the traffic and a list of the device IDs with only outliers in the variance of the traffic.
+
+    Parameters:
+    ----------
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    oddities : set
+        A set of device IDs with outliers in the variance of the traffic.
+    device_id_set : set
+        A set of device IDs to be checked for outliers in the variance of the traffic.
+    threshold : float
+        The threshold for outlier detection.
+
+    Returns:
+    -------
+    set
+        A set of device IDs including outliers in the variance of the traffic.
+    list
+        A list of the device IDs with only outliers in the variance of the traffic.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the variance outlier checking process.
+
+    Example:
+    -------
+    >>> time_series_df = pd.DataFrame(...)
+    >>> oddities = set()
+    >>> device_id_set = {1, 2, 3}
+    >>> threshold = 1.5
+    >>> oddities, test_failure_list = check_variances(time_series_df, oddities, device_id_set, threshold)
+    """
     try:
         device_traffic_var_list = []
         device_id_list = []
         test_failure_list = []
+        
         # find the outlier variance values relative to variancess of all devices
         for device_id in device_id_set:
             device_traffic_var = np.var(time_series_df[time_series_df.device_id == device_id].traffic)
             device_traffic_var_list.append(device_traffic_var)
             device_id_list.append(device_id)
         outliers = find_outliers_iqr(device_traffic_var_list, threshold)
-        # find device_id for all outliers and to oddities
+        
+        # find device_id for all outliers and add to set and list
         for outlier in outliers:
             positions = find_positions(device_traffic_var_list, outlier)
             for position in positions:
@@ -525,6 +754,47 @@ def check_variances(time_series_df: pd.DataFrame, oddities: set, device_id_set: 
 
 def check_autocorrelation(time_series_df: pd.DataFrame, oddities: set, device_id_set: set, 
                           lag_max: int, acf_threshold: float) -> set:
+    """
+    Check for autocorrelation in the time series data.
+
+    This function takes a DataFrame of time series data, a set of device IDs, a lag max, and a threshold as input and checks for autocorrelation in the time series data.
+
+    The function returns a set of device IDs with autocorrelation and a list of the device IDs with autocorrelation.
+
+    Parameters:
+    ----------
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    oddities : set
+        A set of device IDs with autocorrelation.
+    device_id_set : set
+        A set of device IDs to be checked for autocorrelation.
+    lag_max : int
+        The maximum lag to be considered for autocorrelation.
+    acf_threshold : float
+        The threshold for autocorrelation detection.
+
+    Returns:
+    -------
+    set
+        A set of device IDs with autocorrelation.
+    list
+        A list of the device IDs with autocorrelation.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the autocorrelation checking process.
+
+    Example:
+    -------
+    >>> time_series_df = pd.DataFrame(...)
+    >>> oddities = set()
+    >>> device_id_set = {1, 2, 3}
+    >>> lag_max = 10
+    >>> acf_threshold = 0.5
+    >>> oddities, test_failure_list = check_autocorrelation(time_series_df, oddities, device_id_set, lag_max, acf_threshold)
+    """
     try:
         test_failure_list = []
         for device_id in device_id_set:
@@ -546,12 +816,34 @@ def find_outliers_iqr(data: list, threshold: float) -> list:
     """
     Find significant outliers in a list using the IQR (Interquartile Range) method.
 
+    This function takes a list of numerical values and a threshold as input and finds significant outliers in the list using the IQR (Interquartile Range) method.
+
+    The function returns a list of the significant outlier values.
+
     Parameters:
-        data (list): A list of numerical values.
-        threshold (float): IQR threshold for outlier detection (default=1.5).
+    ----------
+    data : list
+        A list of numerical values.
+    threshold : float
+        IQR threshold for outlier detection (default=1.5).
 
     Returns:
-        outliers (list): A list containing the significant outlier values.
+    -------
+    list
+        A list containing the significant outlier values.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the outlier detection process.
+
+    Example:
+    -------
+    >>> data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    >>> threshold = 1.5
+    >>> outliers = find_outliers_iqr(data, threshold)
+    >>> outliers
+    [2, 8]
     """
     try:
         data_array = np.array(data)
@@ -569,6 +861,44 @@ def find_outliers_iqr(data: list, threshold: float) -> list:
         raise e
 
 def check_normal_distribution(time_series_df: pd.DataFrame, oddities: set, device_id_set: set, alpha: float) -> set:
+    """
+    Check for normality of the traffic distribution of the devices.
+
+    This function takes a DataFrame of time series data, a set of device IDs, and an alpha as input and checks for normality of the traffic distribution of the devices.
+
+    The function returns a set of device IDs with non-normal traffic distributions and a list of the device IDs with non-normal traffic distributions.
+
+    Parameters:
+    ----------
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    oddities : set
+        A set of device IDs with non-normal traffic distributions.
+    device_id_set : set
+        A set of device IDs to be checked for normality of the traffic distribution.
+    alpha : float
+        The significance level for the normality test (default=0.05).
+
+    Returns:
+    -------
+    set
+        A set of device IDs with non-normal traffic distributions.
+    list
+        A list of the device IDs with non-normal traffic distributions.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the normality checking process.
+
+    Example:
+    -------
+    >>> time_series_df = pd.DataFrame(...)
+    >>> oddities = set()
+    >>> device_id_set = {1, 2, 3}
+    >>> alpha = 0.05
+    >>> oddities, test_failure_list = check_normal_distribution(time_series_df, oddities, device_id_set, alpha)
+    """
     try:
         test_failure_list = []
         for device_id in device_id_set:
@@ -588,12 +918,33 @@ def is_normal_distribution(data: list, alpha: float) -> bool:
     """
     Check if a list of data is normally distributed using the Shapiro-Wilk test.
 
+    This function takes a list of data and an alpha as input and checks if the data is normally distributed using the Shapiro-Wilk test.
+
+    The function returns True if the data is normally distributed and False otherwise.
+
     Parameters:
-        data (list): A list of numerical values.
-        alpha (float): The significance level 
+    ----------
+    data : list
+        A list of numerical values.
+    alpha : float
+        The significance level 
 
     Returns:
-        bool: True if the data is normally distributed, False otherwise.
+    -------
+    bool
+        True if the data is normally distributed, False otherwise.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the normality checking process.
+
+    Example:
+    -------
+    >>> data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    >>> alpha = 0.05
+    >>> is_normal_distribution(data, alpha)
+    True
     """
     _, p_value = stats.shapiro(data)
     return p_value > alpha
@@ -644,6 +995,41 @@ def find_positions(input_list: list, element) -> list:
 
 
 def create_oddities_dictionary(oddities: set, time_series_df: pd.DataFrame, meta_df: pd.DataFrame) -> dict:
+    """
+    Create a dictionary of the identified outliers.
+
+    This function takes a set of device IDs, a DataFrame of time series data, and a DataFrame of metadata and creates a dictionary of the identified outliers.
+
+    The dictionary is a mapping from the device name to a list of the date and traffic values for the device.
+
+    Parameters:
+    ----------
+    oddities : set
+        A set of device IDs with outliers.
+    time_series_df : pd.DataFrame
+        A DataFrame of time series data.
+    meta_df : pd.DataFrame
+        A DataFrame of metadata.
+
+    Returns:
+    -------
+    dict
+        A dictionary of the identified outliers.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the dictionary creation process.
+
+    Example:
+    -------
+    >>> oddities = {1, 2, 3}
+    >>> time_series_df = pd.DataFrame(...)
+    >>> meta_df = pd.DataFrame(...)
+    >>> oddities_dict = create_oddities_dictionary(oddities, time_series_df, meta_df)
+    >>> oddities_dict
+    {'Device ID 1: Device Name 1': [['2023-03-08', 10], ['2023-03-09', 20]], 'Device ID 2: Device Name 2': [['2023-03-10', 30], ['2023-03-11', 40]]}
+    """
     try:
         oddities_dict = {}
         for device_id in oddities:
@@ -661,6 +1047,41 @@ def create_oddities_dictionary(oddities: set, time_series_df: pd.DataFrame, meta
     
     
 def create_oddities_dataframe(oddities: set, meta_df: pd.DataFrame) -> pd.DataFrame:    
+    """
+    Create a DataFrame of the identified outliers.
+
+    This function takes a set of device IDs and a DataFrame of metadata and creates a DataFrame of the identified outliers.
+
+    The DataFrame includes the device ID, name, date, and traffic values for the outliers.
+
+    Parameters:
+    ----------
+    oddities : set
+        A set of device IDs with outliers.
+    meta_df : pd.DataFrame
+        A DataFrame of metadata.
+
+    Returns:
+    -------
+    pd.DataFrame
+        A DataFrame of the identified outliers.
+
+    Raises:
+    ------
+    Exception
+        If there is an error during the DataFrame creation process.
+
+    Example:
+    -------
+    >>> oddities = {1, 2, 3}
+    >>> meta_df = pd.DataFrame(...)
+    >>> oddities_df = create_oddities_dataframe(oddities, meta_df)
+    >>> oddities_df
+    Device ID   Name             Date   Traffic
+    0         1   Device Name 1  2023-03-08  10
+    1         2   Device Name 2  2023-03-10  30
+    2         3   Device Name 3  2023-03-11  40
+    """
     try:
         oddity_df_list = []
         for device_id in oddities:
@@ -678,25 +1099,43 @@ def plot_multiple_scatter(data_dict: dict) -> None:
     """
     Plot multiple scatter plots on a single figure with each plot on its own set of axes.
 
+    This function takes a dictionary of scatter plot data and plots each scatter plot on its own set of axes.
+
+    The dictionary should have keys that represent the title of the scatter plot and values that are lists containing the x and y values.
+
+    For example, the following dictionary could be used to plot two scatter plots:
+
+    data_dict = {
+        "Plot 1": [[x1, y1], [x2, y2]],
+        "Plot 2": [[x3, y3], [x4, y4]],
+    }
+
+    The function will then plot two scatter plots - one for each key in the dictionary. The x-axis will represent the date and the y-axis will represent the traffic (MB).
+
     Parameters:
-        data_dict (dict): A dictionary where each key represents the title of the scatter plot,
-                          and each value is a list containing the x and y values.
-                          Example: {"Plot 1": [[x1, y1], "Plot 2": [[x2, y2]], ...}
+    ----------
+    data_dict : dict
+        A dictionary where each key represents the title of the scatter plot, and each value is a list containing the x and y values.
+            Example: {"Plot 1": [[x1, y1], "Plot 2": [[x2, y2]], ...}
 
     Returns:
+    --------
         None (displays the plot)
+        
+    Raises:
+    ------
+    Exception
+        If there is an error during the plotting process.
     """
     try:
         num_plots = len(data_dict)
         rows = num_plots // 2 + num_plots % 2
         cols = min(2, num_plots)
-
-        # Create a new figure with subplots
         fig, axs = plt.subplots(rows, cols, figsize=(10, 6))
-
+        
         # Flatten the axs array if only one row or column of plots
         axs = np.ravel(axs)
-
+        
         # Plot each scatter plot from the data_dict on its own set of axes
         for i, (title, data) in enumerate(data_dict.items()):
             x, y = data
@@ -707,7 +1146,6 @@ def plot_multiple_scatter(data_dict: dict) -> None:
             axs[i].set_title(title)
             if i in [len(data_dict) - 1, len(data_dict)-2]:
                 axs[i].set_xlabel('Date')
-        # Adjust layout and display the plot
         plt.tight_layout()
         plt.show()
     
@@ -717,6 +1155,29 @@ def plot_multiple_scatter(data_dict: dict) -> None:
 
 
 def write_dataframe_to_json(dataframe: pd.DataFrame, file_name: str) -> None:
+    """
+    Write a DataFrame to a JSON file.
+
+    This function takes a DataFrame and a file name and writes the DataFrame to the file in JSON format.
+
+    The JSON file will be formatted with the `records` orient and an indent of 4.
+
+    Parameters:
+    ----------
+    dataframe : pd.DataFrame
+        The DataFrame to be written to the JSON file.
+    file_name : str
+        The name of the file to write the DataFrame to.
+
+    Returns:
+    --------
+        None
+        
+    Raises:
+    ------
+    Exception
+        If there is an error during the writing process.
+    """
     try:
         json_data = dataframe.to_json(orient='records', indent=4)
         with open(file_name, 'w') as json_file:
@@ -798,9 +1259,8 @@ if __name__ == '__main__':
     # Task 2
     
     '''
-    Since it's stated in info.md that SQL cannot be used for this task, I will generate the 
-    dataframes for time_series and meta by parsing the data files 
-    directly into dataframes using pandas
+    Since it's stated in info.md that SQL cannot be used for this task, I will generate the dataframes for time_series and meta 
+    by parsing the data files directly into dataframes using pandas
     '''
     meta_df, time_series_df = generate_dataframes_from_files(files)
     
@@ -812,7 +1272,7 @@ if __name__ == '__main__':
         statement 2 - Network traffic is always non-negative
         statement 3 - Network traffic is largely predictable throughout the year
     Therefore, we can define a device as "odd" if it contradicts any of the 3 above statements. 
-    In addition, we would generally expect the traffic data points to be both independent and normally distributed. 
+    From inspection, we would generally expect the traffic data points to be both independent and normally distributed. 
     Therefore, it will also be meaningful to perform tests for autocorrelation and normality.
     '''
     
@@ -822,7 +1282,7 @@ if __name__ == '__main__':
     '''
     Below are the various constants used as thresholds and the significance level of tests which will be conducted. Note that these values
     have been chosen in such a way to select only the most extreme (and therefore, odd) data from the devices. Naturally these values can be 
-    changed as needed to adjust the sensitivity of each test.
+    varied as needed to adjust the sensitivity of each test.
     '''
     iqr_threshold = 6
     alpha = 0.000005
@@ -870,11 +1330,13 @@ if __name__ == '__main__':
     
     - hungry_elephant
         - data is highly autocorrelated,
-        - range of data values is non-continuous (i.e. can apparently only take integer values),
+        - range of data values is discrete (i.e. can evidently only assume integer values),
         - the mean network traffic is signifcantly smaller than the other devices,
         - there are noticeable dips near the end/beginning of months.
-        Assuming that this is not erroneous data, it can be deduced that this device is on some daily network traffic cap/limit which depends on the previous 
-        day's traffic utilization. It is also possible that these limits are lowered towards the end of the month.
+        Assuming that this is not erroneous data, this device is likely on a daily network traffic cap/limit which depends on the previous 
+        day's traffic utilization. The data also suggests that the device sends it's data in daily batch intervals (as opposed to real-time streaming). 
+        This is likely to manage network resources and prioritize critical data transmission. It is also possible that these limits are lowered 
+        towards the end of the month. Due to the low network traffic average, this device could be some form of environmental sensor (like a smart thermostat).
 
     - sneaking_catfish
         - the highest variance dataset
