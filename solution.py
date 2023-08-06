@@ -3,7 +3,7 @@
 import pandas as pd
 import os, sqlite3, csv, json, logging, inspect
 import matplotlib.pyplot as plt
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf, acf, pacf
+from statsmodels.graphics.tsaplots import acf
 from scipy import stats
 import numpy as np
 
@@ -861,6 +861,7 @@ def find_outliers_iqr(data: list, threshold: float) -> list:
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
         raise e
+
 
 def check_normal_distribution(time_series_df: pd.DataFrame, oddities: set, device_id_set: set, alpha: float) -> set:
     """
