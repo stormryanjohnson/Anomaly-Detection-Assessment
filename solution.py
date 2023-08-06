@@ -226,7 +226,7 @@ def insert_files_into_tables(files: list) -> None:
                                 (?, {device_id}, "internet traffic", ?)'
                 insert_data_from_csv(cursor=cursor, csv_file=file_name, insert_query=insert_query)
             elif file_name.endswith('.txt'):
-                insert_query = f'INSERT INTO meta (id, name) VALUES (?, ?)'
+                insert_query = 'INSERT INTO meta (id, name) VALUES (?, ?)'
                 insert_data_from_txt(cursor=cursor, txt_file=file_name, insert_query=insert_query)
                 
     except Exception as e:
@@ -364,11 +364,12 @@ def find_device_id_from_file_name(csv_file: str) -> int:
     ValueError: Invalid file name format. Unable to extract device ID.
     """
     try:
-        device_id = int(csv_file[csv_file.rfind('_')+1: csv_file.rfind('.')])
-        return device_id
+        return int(csv_file[csv_file.rfind('_')+1: csv_file.rfind('.')])
+        
+        
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
-        raise ValueError('Invalid file name format. Unable to extract device ID.')  
+        raise ValueError('Invalid file name format. Unable to extract device ID.') from e
 
 
 # HELPER FUNCTIONS FOR TASK 2
@@ -421,8 +422,6 @@ def check_odd_dates(time_series_df: pd.DataFrame, oddities: set, device_id_set: 
             if device_dates != unique_dates or len(device_dates) != len(device_df.date):  
                 oddities.add(int(device_id))
                 test_failure_list.append(device_id)
-            else:
-                continue 
     
         return oddities, test_failure_list
     
@@ -433,15 +432,11 @@ def check_odd_dates(time_series_df: pd.DataFrame, oddities: set, device_id_set: 
     
 def get_set_of_device_id(files: list) -> set:
     try:
-        device_id_set = set()
-        for file in files:
-            if file.endswith('.csv'):
-                device_id_set.add(find_device_id_from_file_name(file))
-            else:
-                continue 
+        
+        return {
+            find_device_id_from_file_name(file) for file in files if file.endswith('.csv')
+            }
             
-        return device_id_set
-    
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
         raise e
@@ -467,8 +462,7 @@ def check_outliers(time_series_df: pd.DataFrame, oddities: set, device_id_set: s
         test_failure_list = []
         for device_id in device_id_set:
             device_traffic = list(time_series_df[time_series_df.device_id == device_id].traffic)
-            outliers = find_outliers_iqr(device_traffic, threshold)
-            if outliers:
+            if find_outliers_iqr(device_traffic, threshold):
                 oddities.add(device_id)
                 test_failure_list.append(device_id)
                 
@@ -639,12 +633,10 @@ def find_positions(input_list: list, element) -> list:
     []
     """
     try:
-        positions = []
-        for i, item in enumerate(input_list):
-            if item == element:
-                positions.append(i)
-                
-        return positions
+        
+        return [
+            i for i, item in enumerate(input_list) if item == element
+            ]
 
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
@@ -674,12 +666,8 @@ def create_oddities_dataframe(oddities: set, meta_df: pd.DataFrame) -> pd.DataFr
         for device_id in oddities:
             df = meta_df[meta_df.id == device_id].dropna()
             oddity_df_list.append(df)
-        if oddity_df_list == []:
-            oddity_df = pd.DataFrame()
-        else:
-            oddity_df = pd.DataFrame()
-            oddity_df = pd.concat(oddity_df_list, ignore_index=True)
-        return oddity_df
+
+        return pd.concat(oddity_df_list, ignore_index=True) if oddity_df_list else pd.DataFrame()
     
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
@@ -700,7 +688,7 @@ def plot_multiple_scatter(data_dict: dict) -> None:
     """
     try:
         num_plots = len(data_dict)
-        rows = int(num_plots / 2) + num_plots % 2
+        rows = num_plots // 2 + num_plots % 2
         cols = min(2, num_plots)
 
         # Create a new figure with subplots
@@ -713,12 +701,11 @@ def plot_multiple_scatter(data_dict: dict) -> None:
         for i, (title, data) in enumerate(data_dict.items()):
             x, y = data
             axs[i].scatter(x, y)
-            #axs[i].set_xticks([])
             subset_x_values = x[::90]  # Show every 90th value
             axs[i].set_xticks(subset_x_values)
             axs[i].set_ylabel('Traffic (MB)')
             axs[i].set_title(title)
-            if i == len(data_dict) - 1 or i == len(data_dict)-2:
+            if i in [len(data_dict) - 1, len(data_dict)-2]:
                 axs[i].set_xlabel('Date')
         # Adjust layout and display the plot
         plt.tight_layout()
@@ -751,7 +738,7 @@ if __name__ == '__main__':
 
     try:
         os.remove(db_name)
-    except:
+    except Exception:
         pass
     
     # initiate logger for monitoring and maintainability
@@ -778,7 +765,6 @@ if __name__ == '__main__':
     # return all records in meta table
     query_meta_records = 'SELECT * FROM meta'  
     df_meta = pd.read_sql_query(query_meta_records, db_conn)
-    #print(df_meta.head())
     
     # total network traffic on the first day
     query_total_traffic_first_day = '''
@@ -790,7 +776,6 @@ if __name__ == '__main__':
         )
     '''  
     df_total_traffic_day_1 = pd.read_sql_query(query_total_traffic_first_day, db_conn)
-    #print(df_total_traffic_day_1)
     
     # top 5 devices total network traffic by device name
     query_top_5_devices = '''
@@ -803,7 +788,6 @@ if __name__ == '__main__':
         LIMIT 5
     '''  
     df_top_5_devices = pd.read_sql_query(query_top_5_devices, db_conn)
-    #print(df_top_5_devices)
 
     # commit and close connection
     db_conn.commit()
