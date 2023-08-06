@@ -132,6 +132,7 @@ def create_tables(cursor: sqlite3.Cursor) -> None:
                 PRIMARY KEY (id)
             )
         ''')
+        logger.info('Tables created')
     
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
@@ -228,6 +229,7 @@ def insert_files_into_tables(files: list) -> None:
             elif file_name.endswith('.txt'):
                 insert_query = 'INSERT INTO meta (id, name) VALUES (?, ?)'
                 insert_data_from_txt(cursor=cursor, txt_file=file_name, insert_query=insert_query)
+        logger.info('Files inserted into tables')
                 
     except Exception as e:
         logger.error(f'{current_function_name()}: {e}')
