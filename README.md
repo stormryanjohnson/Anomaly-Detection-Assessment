@@ -6,7 +6,7 @@ The purpose of the coding test is for us to determine your level of coding and a
 
 You are given files:
 
-1. info.md (this file)
+1. README.md (this file)
 2. folder "data" which contains data files and a single meta data file
 3. solution_starter.py
 
